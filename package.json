@@ -1,0 +1,14 @@
+{
+  "name": "vc-streak-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.15.2",
+    "@discordjs/voice": "^0.17.0",
+    "ffmpeg-static": "^5.1.0"
+  }
+}
