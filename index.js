@@ -9,6 +9,8 @@ const {
 } = require("@discordjs/voice");
 const path = require("path");
 
+console.log("[BOT] Starting up..."); // Startup log
+
 // ----------------------------
 // CONFIG (use env vars)
 // ----------------------------
@@ -19,7 +21,7 @@ const PLAY_EVERY_MINUTES = parseInt(process.env.PLAY_EVERY_MINUTES) || 2;
 // ----------------------------
 
 if (!TOKEN) {
-    console.error("FATAL: TOKEN environment variable not set. Set TOKEN in Railway/Heroku/etc.");
+    console.error("FATAL: TOKEN environment variable not set.");
     process.exit(1);
 }
 
@@ -47,13 +49,27 @@ function playSilentSound() {
 // Function to join voice channel
 async function connectToVC() {
     try {
-        console.log("[BOT] Connecting to VC...");
+        console.log(`[BOT] Attempting to join VC: ${VOICE_CHANNEL_ID} in Guild: ${GUILD_ID}`);
+
+        const guild = client.guilds.cache.get(GUILD_ID);
+        if (!guild) {
+            console.error(`[ERROR] Guild not found! Check GUILD_ID`);
+            return;
+        }
+
+        const channel = guild.channels.cache.get(VOICE_CHANNEL_ID);
+        if (!channel) {
+            console.error(`[ERROR] Voice channel not found! Check VOICE_CHANNEL_ID`);
+            return;
+        }
 
         connection = joinVoiceChannel({
             channelId: VOICE_CHANNEL_ID,
             guildId: GUILD_ID,
-            adapterCreator: client.guilds.cache.get(GUILD_ID).voiceAdapterCreator
+            adapterCreator: guild.voiceAdapterCreator
         });
+
+        console.log("[BOT] Voice connection object created");
 
         player = createAudioPlayer({
             behaviors: {
@@ -63,11 +79,10 @@ async function connectToVC() {
 
         connection.subscribe(player);
 
-        await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
+        await entersState(connection, VoiceConnectionStatus.Ready, 30000);
         console.log("[BOT] Successfully connected to VC!");
 
         setInterval(playSilentSound, PLAY_EVERY_MINUTES * 60 * 1000);
-
         playSilentSound();
 
         connection.on(VoiceConnectionStatus.Disconnected, async () => {
@@ -76,13 +91,14 @@ async function connectToVC() {
         });
 
     } catch (err) {
-        console.error("VC Connection Error:", err);
+        console.error("[ERROR] VC Connection Error:", err);
         setTimeout(connectToVC, 5000);
     }
 }
 
 client.on("ready", () => {
     console.log(`[BOT] Logged in as ${client.user.tag}`);
+    console.log(`[BOT] Guilds cached: ${client.guilds.cache.map(g => g.id)}`);
     connectToVC();
 });
 
